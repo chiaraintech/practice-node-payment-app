@@ -1,23 +1,19 @@
 if (process.env.NODE_ENV !== 'production') {
     require('dotenv').config({path:'practice-node-payment-app/.env'});                       
 }
+
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 const stripePublicKey = process.env.STRIPE_PUBLIC_KEY;
 const express = require('express');
 const app = express();
 const fs = require('fs');
-
-//To embed serverside code inside our front-end HTML pages.
-//My front end will be using EJS in order to render the views.
-
+const stripe = require('stripe')(stripeSecretKey);
 
 app.set('view engine', 'ejs')
 app.use(express.json())
 app.use(express.static('public'))
 
-
-
-//ROUTE
+//ROUTE STORE
 app.get('/store', function(req, res) {
     fs.readFile('items.json', function(error, data) {
       if (error) {
@@ -29,6 +25,37 @@ app.get('/store', function(req, res) {
         })
       }
     })
-  })
+});
+
+//ROUTE PURCHASE
+app.post('/purchase', function(req, res) {
+    fs.readFile('items.json', function(error, data) {
+      if (error) {
+        res.status(500).end()
+      } else {
+        const itemsJson = JSON.parse(data);
+        const itemsArray = itemsJson.music.concat(itemsJson.merch)
+        let total = 0
+        req.body.items.forEach(function(item) {
+            const itemJson = itemsArray.find(function(i) {
+                return i.id = item.id
+            })
+            total = total + itemJson.price * item.quantity
+        })
+        stripe.charges.create({
+            amount: total,
+            source: req.body.stripeTokenId,
+            currency: 'USD'
+        }).then(function() {
+            console.log('Charge successful')
+            res.json({ message: 'Successfully purchased items.'})
+        }).catch(function() {
+            console.log('Charge Fail')
+            res.status(500).end()
+        })
+      }
+    })
+});
+
 
 app.listen(4000);
