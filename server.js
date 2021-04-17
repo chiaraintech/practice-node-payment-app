@@ -1,5 +1,5 @@
 if (process.env.NODE_ENV !== 'production') {
-    require('dotenv').load()                        //It will load all the vars in my env file if I am NOT in prod.
+    require('dotenv').config({path:'practice-node-payment-app/.env'});                       
 }
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 const stripePublicKey = process.env.STRIPE_PUBLIC_KEY;
